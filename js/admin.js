@@ -89,22 +89,22 @@
             : t('beste_schule', 'Never');
 
         const statusBadge = account.lastSyncError
-            ? ` < span class = "bs-badge bs-badge-error" title = "${escHtml(account.lastSyncError)}" > ${t('beste_schule', 'Error')} < / span > `
+            ? `<span class="bs-badge bs-badge-error" title="${escHtml(account.lastSyncError)}">${t('beste_schule', 'Error')}</span>`
             : account.lastSyncAt
-                ? ` < span class = "bs-badge bs-badge-ok" > ${t('beste_schule', 'OK')} < / span > `
-                : ` < span class = "bs-badge bs-badge-none" > ${t('beste_schule', 'Pending')} < / span > `;
+                ? `<span class="bs-badge bs-badge-ok">${t('beste_schule', 'OK')}</span>`
+                : `<span class="bs-badge bs-badge-none">${t('beste_schule', 'Pending')}</span>`;
 
         tr.innerHTML = `
-            < td > ${escHtml(account.userId)} < / td >
-            < td > ${escHtml(account.studentName)} < small > (ID: ${account.studentId}) < / small > < / td >
-            < td > ${account.calendarUri ? escHtml(account.calendarUri) : '<em>—</em>'} < / td >
-            < td > ${account.syncInterval}h < / td >
-            < td > ${escHtml(lastSync)} < / td >
-            < td > ${statusBadge} < / td >
-            < td >
-                < button class = "button bs-sync-btn" data - id = "${account.id}" > ${t('beste_schule', 'Sync')} < / button >
-                < button class = "button bs-delete-btn" data - id = "${account.id}" > ${t('beste_schule', 'Delete')} < / button >
-            <  / td > `;
+            <td>${escHtml(account.userId)}</td>
+            <td>${escHtml(account.studentName)} <small>(ID: ${account.studentId})</small></td>
+            <td>${account.calendarUri ? escHtml(account.calendarUri) : '<em>—</em>'}</td>
+            <td>${account.syncInterval}h</td>
+            <td>${escHtml(lastSync)}</td>
+            <td>${statusBadge}</td>
+            <td>
+                <button class="button bs-sync-btn" data-id="${account.id}">${t('beste_schule', 'Sync')}</button>
+                <button class="button bs-delete-btn" data-id="${account.id}">${t('beste_schule', 'Delete')}</button>
+            </td>`;
 
         tbody.appendChild(tr);
     }

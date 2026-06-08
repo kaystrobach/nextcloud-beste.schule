@@ -112,7 +112,7 @@
 
         try {
             const accountId = selectedAccountId();
-            const path      = accountId > 0 ? ` / grades ? accountId = ${accountId}` : '/grades';
+            const path      = accountId > 0 ? `/grades?accountId=${accountId}` : '/grades';
             const results   = await apiFetch('GET', path);
 
             let totalNumerator = 0, totalCount = 0;
@@ -147,12 +147,12 @@
         const tr = document.createElement('tr');
         const gradeClass = gradeColorClass(g.value);
         tr.innerHTML = `
-            < td > ${g.givenAt ? formatDate(g.givenAt) : '—'} < / td >
-            < td > ${escHtml(g.subjectName)} < / td >
-            < td class = "${gradeClass}" > ${escHtml(g.value)} < / td >
-            < td > ${g.collectionName ? escHtml(g.collectionName) : '—'} < / td >
-            < td > ${g.teacherName ? escHtml(g.teacherName) : '—'} < / td >
-            < td > ${g.weight !== null ? g.weight : '—'} < / td > `;
+            <td>${g.givenAt ? formatDate(g.givenAt) : '—'}</td>
+            <td>${escHtml(g.subjectName)}</td>
+            <td class="${gradeClass}">${escHtml(g.value)}</td>
+            <td>${g.collectionName ? escHtml(g.collectionName) : '—'}</td>
+            <td>${g.teacherName ? escHtml(g.teacherName) : '—'}</td>
+            <td>${g.weight !== null ? g.weight : '—'}</td>`;
         return tr;
     }
 
@@ -170,7 +170,7 @@
 
         try {
             const accountId = selectedAccountId();
-            const path      = accountId > 0 ? ` / finalgrades ? accountId = ${accountId}` : '/finalgrades';
+            const path      = accountId > 0 ? `/finalgrades?accountId=${accountId}` : '/finalgrades';
             const results   = await apiFetch('GET', path);
 
             let any = false;
@@ -216,24 +216,24 @@
         Object.values(bySemester).forEach(sem => {
             const block = document.createElement('div');
             block.className = 'bs-semester-block';
-            block.innerHTML = ` < h3 > ${escHtml(sem.name)} < / h3 > `;
+            block.innerHTML = `<h3>${escHtml(sem.name)}</h3>`;
 
             const table = document.createElement('table');
             table.className = 'bs-table';
             table.innerHTML = `
-                < thead >
-                    < tr >
-                        < th > ${t('beste_schule', 'Fach')} < / th >
-                        < th > ${t('beste_schule', 'Endnote')} < / th >
-                    <  / tr >
-                <  / thead > `;
+                <thead>
+                    <tr>
+                        <th>${t('beste_schule', 'Fach')}</th>
+                        <th>${t('beste_schule', 'Endnote')}</th>
+                    </tr>
+                </thead>`;
             const tbody = document.createElement('tbody');
             sem.items.forEach(fg => {
                 const displayValue = fg.value || fg.valueCalc || '—';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    < td > ${escHtml(fg.subjectName)} < / td >
-                    < td class = "${gradeColorClass(displayValue)}" > ${escHtml(displayValue)} < / td > `;
+                    <td>${escHtml(fg.subjectName)}</td>
+                    <td class="${gradeColorClass(displayValue)}">${escHtml(displayValue)}</td>`;
                 tbody.appendChild(tr);
             });
             table.appendChild(tbody);
@@ -257,7 +257,7 @@
                 try {
                     for (let i = 0; i < allAccounts.length; i++) {
                         const a = allAccounts[i];
-                        await apiFetch('POST', ` / accounts / ${a.id} / sync`);
+                        await apiFetch('POST', `/accounts/${a.id}/sync`);
                     }
                 } catch (e) {
                     showBanner(e.message);
@@ -269,7 +269,7 @@
             }
             btn.disabled = true;
             try {
-                await apiFetch('POST', ` / accounts / ${accountId} / sync`);
+                await apiFetch('POST', `/accounts/${accountId}/sync`);
                 const account = allAccounts.find(a => a.id === accountId);
                 if (account) {
                     updateLastSync(account);

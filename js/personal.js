@@ -42,23 +42,23 @@
                 ? new Date(a.lastSyncAt).toLocaleString()
                 : t('beste_schule', 'Never');
                 item.innerHTML = `
-                < div class = "bs-account-info" >
-                    < div class = "bs-account-name" > ${escHtml(a.studentName)} < / div >
-                    < div class = "bs-account-meta" >
+                <div class="bs-account-info">
+                    <div class="bs-account-name">${escHtml(a.studentName)}</div>
+                    <div class="bs-account-meta">
                         ${t('beste_schule', 'Last sync')}: ${escHtml(lastSync)}
-                        ${a.lastSyncError ? ` < span style = "color:var(--color-error)" > ⚠ ${escHtml(a.lastSyncError)} < / span > ` : ''}
-                    <  / div >
-                <  / div >
-                < button class = "button bs-p-sync-btn" data - id = "${a.id}" > ${t('beste_schule', 'Sync')} < / button >
-                < button class = "button bs-p-delete-btn" data - id = "${a.id}" > ${t('beste_schule', 'Remove')} < / button > `;
+                        ${a.lastSyncError ? `<span style="color:var(--color-error)">⚠ ${escHtml(a.lastSyncError)}</span>` : ''}
+                    </div>
+                </div>
+                <button class="button bs-p-sync-btn" data-id="${a.id}">${t('beste_schule', 'Sync')}</button>
+                <button class="button bs-p-delete-btn" data-id="${a.id}">${t('beste_schule', 'Remove')}</button>`;
                 container.appendChild(item);
                 });
 
             if (!accounts || accounts.length === 0) {
-                container.innerHTML = ` < p > ${t('beste_schule', 'No accounts connected yet.')} < / p > `;
+                container.innerHTML = `<p>${t('beste_schule', 'No accounts connected yet.')}</p>`;
             }
         } catch (e) {
-            container.innerHTML = ` < p style = "color:var(--color-error)" > ${escHtml(e.message)} < / p > `;
+            container.innerHTML = `<p style="color:var(--color-error)">${escHtml(e.message)}</p>`;
         } finally {
             loading.style.display = 'none';
         }
