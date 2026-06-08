@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace OCA\BesteSchule\Migration;
@@ -8,14 +9,16 @@ use OCP\DB\ISchemaWrapper;
 use OCP\Migration\IOutput;
 use OCP\Migration\SimpleMigrationStep;
 
-class Version20260608155700 extends SimpleMigrationStep {
+class Version20260608155700 extends SimpleMigrationStep
+{
     /**
      * @param IOutput $output
      * @param Closure $schemaClosure
      * @param array $options
      * @return null|ISchemaWrapper
      */
-    public function changeSchema(IOutput $output, Closure $schemaClosure, array $options): ?ISchemaWrapper {
+    public function changeSchema(IOutput $output, Closure $schemaClosure, array $options): ?ISchemaWrapper
+    {
         /** @var ISchemaWrapper $schema */
         $schema = $schemaClosure();
 
