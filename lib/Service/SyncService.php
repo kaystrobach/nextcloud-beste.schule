@@ -69,31 +69,6 @@ class SyncService {
         $this->syncLogMapper->insert($log);
     }
 
-    private function clearCalendarRange(ICalendar $calendar): void {
-        $start = (new \DateTime())->sub(new \DateInterval('P' . self::LOOKBACK_DAYS . 'D'));
-        $end   = (new \DateTime())->add(new \DateInterval('P' . (self::LOOKAHEAD_WEEKS * 7) . 'D'));
-
-        $existing = $calendar->search('', [], [
-            'timerange' => ['start' => $start, 'end' => $end],
-        ]);
-
-        foreach ($existing as $obj) {
-            foreach ($obj['objects'] as $vevent) {
-                $uid = $vevent['UID'][0] ?? null;
-                if ($uid && str_starts_with($uid, 'besteschule-')) {
-                    try {
-                        // @phpstan-ignore-next-line
-                        $calendar->deleteObject($uid);
-                    } catch (\Exception $e) {
-                        $this->logger->error('beste.schule: failed to delete event {uid}: {err}', [
-                            'uid' => $uid,
-                            'err' => $e->getMessage(),
-                        ]);
-                    }
-                }
-            }
-        }
-    }
 
     // ── Grades ────────────────────────────────────────────────────────────────
 
@@ -159,7 +134,7 @@ class SyncService {
             return;
         }
 
-        $this->clearCalendarRange($calendar);
+        $processedUids = [];
 
         foreach ($days as $day) {
             $date = $day['date'] ?? null;
@@ -169,17 +144,86 @@ class SyncService {
 
             // One event per lesson
             foreach ($day['lessons'] ?? [] as $lesson) {
-                $this->upsertLessonEvent($calendar, $date, $lesson, $account->getStudentName());
+                $uid = $this->upsertLessonEvent($calendar, $date, $lesson, $account->getStudentName());
+                if ($uid) {
+                    $processedUids[] = $uid;
+                }
             }
 
             // All-day events for day notes
             foreach ($day['notes'] ?? [] as $note) {
-                $this->upsertNoteEvent($calendar, $date, $note, $account->getStudentName());
+                $uid = $this->upsertNoteEvent($calendar, $date, $note, $account->getStudentName());
+                if ($uid) {
+                    $processedUids[] = $uid;
+                }
+            }
+        }
+
+        $this->pruneStaleEvents($calendar, $processedUids);
+    }
+
+    private function pruneStaleEvents(ICalendar $calendar, array $processedUids): void {
+        // Search for all events in the calendar
+        // pattern is empty to find everything, but we can't easily filter by UID in search pattern
+        // Nextcloud's search implementation for CalDAV is quite powerful though.
+        // We'll fetch events and check their UIDs.
+        
+        $start = (new \DateTime())->sub(new \DateInterval('P' . self::LOOKBACK_DAYS . 'D'));
+        $end   = (new \DateTime())->add(new \DateInterval('P' . (self::LOOKAHEAD_WEEKS * 7) . 'D'));
+
+        $existing = $calendar->search('', [], [
+            'timerange' => ['start' => $start, 'end' => $end],
+        ]);
+
+        foreach ($existing as $obj) {
+            foreach ($obj['objects'] as $vevent) {
+                $uid = $vevent['UID'][0] ?? null;
+                if ($uid && str_starts_with((string)$uid, 'besteschule-')) {
+                    if (!in_array((string)$uid, $processedUids, true)) {
+                        $this->logger->debug('beste.schule: pruning stale event {uid}', ['uid' => $uid]);
+                        // Since we cannot delete via ICalendar, we mark it as CANCELED
+                        $this->cancelEvent($calendar, (string)$uid, $vevent);
+                    }
+                }
             }
         }
     }
 
-    private function upsertLessonEvent(ICalendar $calendar, string $date, array $lesson, string $studentName): void {
+    private function cancelEvent(ICalendar $calendar, string $uid, array $veventData): void {
+        $vcal = new VCalendar();
+        $summary = $veventData['SUMMARY'][0] ?? 'Entfernt';
+        if (!str_contains($summary, '❌')) {
+            $summary = '❌ ' . $summary;
+        }
+
+        $vevent = $vcal->add('VEVENT', [
+            'UID'     => $uid,
+            'SUMMARY' => $summary,
+            'STATUS'  => 'CANCELLED',
+            'DTSTAMP' => new \DateTime('now', new \DateTimeZone('UTC')),
+        ]);
+
+        if (isset($veventData['DTSTART'])) {
+            $vevent->add('DTSTART', $veventData['DTSTART'][0]);
+            if (isset($veventData['DTSTART']['VALUE'])) {
+                $vevent->DTSTART['VALUE'] = $veventData['DTSTART']['VALUE'];
+            }
+        }
+        if (isset($veventData['DTEND'])) {
+            $vevent->add('DTEND', $veventData['DTEND'][0]);
+            if (isset($veventData['DTEND']['VALUE'])) {
+                $vevent->DTEND['VALUE'] = $veventData['DTEND']['VALUE'];
+            }
+        }
+
+        try {
+            $calendar->createFromString($uid . '.ics', $vcal->serialize());
+        } catch (\Exception $e) {
+            $this->logger->debug('beste.schule: failed to cancel stale event {uid} (might be permission issue or non-writable calendar): ' . $e->getMessage(), ['uid' => $uid]);
+        }
+    }
+
+    private function upsertLessonEvent(ICalendar $calendar, string $date, array $lesson, string $studentName): string {
         $subject    = $lesson['subject']['name'] ?? 'Stunde';
         $status     = $lesson['status'] ?? 'hold';
         $statusIcon = $this->statusIcon($status);
@@ -188,21 +232,45 @@ class SyncService {
         $timeFrom = $lesson['time']['from'] ?? null;
         $timeTo   = $lesson['time']['to']   ?? null;
 
-        $uid = 'besteschule-lesson-' . ($lesson['id'] ?? md5("{$date}-{$subject}"));
+        $uid = 'besteschule-lesson-' . ($lesson['id'] ?? md5("{$date}-{$subject}-{$timeFrom}-{$timeTo}"));
 
         $vcal = new VCalendar();
         $vevent = $vcal->add('VEVENT', [
             'UID'     => $uid,
             'SUMMARY' => $summary,
+            'DTSTAMP' => new \DateTime('now', new \DateTimeZone('UTC')),
         ]);
 
         if ($timeFrom && $timeTo) {
-            $vevent->add('DTSTART', new \DateTime("{$date}T{$timeFrom}:00"));
-            $vevent->add('DTEND',   new \DateTime("{$date}T{$timeTo}:00"));
+            $dtStart = new \DateTime("{$date}T{$timeFrom}:00", new \DateTimeZone('Europe/Berlin'));
+            $dtEnd   = new \DateTime("{$date}T{$timeTo}:00", new \DateTimeZone('Europe/Berlin'));
+
+            $this->logger->debug('beste.schule: Lesson {subject} on {date} from {from} to {to} (Berlin)', [
+                'subject' => $subject,
+                'date' => $date,
+                'from' => $dtStart->format('Y-m-d H:i:s P'),
+                'to' => $dtEnd->format('Y-m-d H:i:s P'),
+            ]);
+
+            // Nextcloud expects UTC in VCalendar
+            $dtStart->setTimezone(new \DateTimeZone('UTC'));
+            $dtEnd->setTimezone(new \DateTimeZone('UTC'));
+
+            $this->logger->debug('beste.schule: Lesson {subject} on {date} from {from} to {to} (UTC)', [
+                'subject' => $subject,
+                'date' => $date,
+                'from' => $dtStart->format('Y-m-d H:i:s P'),
+                'to' => $dtEnd->format('Y-m-d H:i:s P'),
+            ]);
+
+            $vevent->add('DTSTART', $dtStart);
+            $vevent->add('DTEND',   $dtEnd);
         } else {
-            $vevent->add('DTSTART', new \DateTimeImmutable($date));
+            $dtStart = new \DateTimeImmutable($date);
+            $dtEnd = $dtStart->modify('+1 day');
+            $vevent->add('DTSTART', $dtStart);
             $vevent->DTSTART['VALUE'] = 'DATE';
-            $vevent->add('DTEND',   new \DateTimeImmutable($date));
+            $vevent->add('DTEND',   $dtEnd);
             $vevent->DTEND['VALUE'] = 'DATE';
         }
 
@@ -213,10 +281,16 @@ class SyncService {
 
         $vevent->add('CATEGORIES', "beste.schule,{$studentName}");
 
-        $calendar->createEvent($uid, $vcal->serialize());
+        try {
+            $calendar->createFromString($uid . '.ics', $vcal->serialize());
+        } catch (\Exception $e) {
+            $this->logger->debug('beste.schule: lesson failed creation/update for {uid}: ' . $e->getMessage(), ['uid' => $uid]);
+            // If it failed due to Conflict, we might want to log it specifically
+        }
+        return $uid;
     }
 
-    private function upsertNoteEvent(ICalendar $calendar, string $date, array $note, string $studentName): void {
+    private function upsertNoteEvent(ICalendar $calendar, string $date, array $note, string $studentName): string {
         $typeName = $note['type']['name'] ?? 'Notiz';
         $text     = $note['description'] ?? '';
         $summary  = "📌 {$typeName}" . ($text ? ": {$text}" : '');
@@ -227,14 +301,23 @@ class SyncService {
         $vevent = $vcal->add('VEVENT', [
             'UID'     => $uid,
             'SUMMARY' => $summary,
+            'DTSTAMP' => new \DateTime('now', new \DateTimeZone('UTC')),
         ]);
-        $vevent->add('DTSTART', new \DateTimeImmutable($date));
+        $dtStart = new \DateTimeImmutable($date);
+        $dtEnd = $dtStart->modify('+1 day');
+        $vevent->add('DTSTART', $dtStart);
         $vevent->DTSTART['VALUE'] = 'DATE';
-        $vevent->add('DTEND',   new \DateTimeImmutable($date));
+        $vevent->add('DTEND',   $dtEnd);
         $vevent->DTEND['VALUE'] = 'DATE';
         $vevent->add('CATEGORIES', "beste.schule,{$studentName}");
 
-        $calendar->createEvent($uid, $vcal->serialize());
+        try {
+            $calendar->createFromString($uid . '.ics', $vcal->serialize());
+        } catch (\Exception $e) {
+            $this->logger->debug('beste.schule: note failed creation/update for {uid}: ' . $e->getMessage(), ['uid' => $uid]);
+            // If it failed due to Conflict, we might want to log it specifically
+        }
+        return $uid;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
