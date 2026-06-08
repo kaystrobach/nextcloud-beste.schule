@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const OCS_BASE = (window.OCS && window.OCS.linkTo) ? window.OCS.linkTo('') : OC.generateUrl('/apps/beste_schule/api/v1', {});
+    const OCS_BASE = (window.OCS && window.OCS.linkTo) ? window.OCS.linkTo('') : OC.linkToOCS('beste_schule/api/v1', 2);
     const headers  = { 'OCS-APIREQUEST': 'true', 'Accept': 'application/json' };
 
     let allAccounts   = [];
