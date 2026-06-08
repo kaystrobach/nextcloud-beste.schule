@@ -1,0 +1,18 @@
+parameters:
+    level: 5
+    paths:
+        - lib
+    excludePaths:
+        - tests/*
+    scanDirectories:
+        - vendor/nextcloud/ocp
+    ignoreErrors:
+        - '#Call to an undefined method OCP\\DB\\QueryBuilder\\IExpressionBuilder::add\(\)#'
+        - '#Call to method addColumn\(\) on an unknown class Doctrine\\DBAL\\Schema\\Table#'
+        - '#Call to method setPrimaryKey\(\) on an unknown class Doctrine\\DBAL\\Schema\\Table#'
+        - '#Call to method addIndex\(\) on an unknown class Doctrine\\DBAL\\Schema\\Table#'
+        - '#unknown class Doctrine\\DBAL\\Schema\\Table#'
+        - '#Instantiated class Sabre\\VObject\\Component\\VCalendar not found#'
+        - '#Call to method add\(\) on an unknown class Sabre\\VObject\\Component\\VCalendar#'
+        - '#Call to an undefined method OCP\\Calendar\\ICalendar::createEvent\(\)#'
+        - '#Call to method serialize\(\) on an unknown class Sabre\\VObject\\Component\\VCalendar#'

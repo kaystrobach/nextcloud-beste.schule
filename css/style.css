@@ -1,0 +1,184 @@
+/* beste.schule Nextcloud app styles */
+
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+
+#bs-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--color-border);
+    flex-wrap: wrap;
+}
+
+#bs-account-switcher {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#bs-last-sync {
+    color: var(--color-text-maxcontrast);
+    font-size: 0.85em;
+}
+
+.bs-section {
+    padding: 20px;
+}
+
+.bs-section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.bs-average {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: var(--color-primary);
+    background: var(--color-primary-light);
+    padding: 2px 10px;
+    border-radius: 12px;
+}
+
+/* ── Cards (settings pages) ──────────────────────────────────────────────── */
+
+.bs-card {
+    background: var(--color-main-background);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    max-width: 800px;
+}
+
+/* ── Forms ───────────────────────────────────────────────────────────────── */
+
+.bs-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.bs-form-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.bs-form-row label {
+    min-width: 200px;
+    font-weight: 500;
+    color: var(--color-text-maxcontrast);
+}
+
+.bs-form-row input[type="text"],
+.bs-form-row input[type="password"],
+.bs-form-row input[type="number"],
+.bs-form-row select {
+    flex: 1;
+    min-width: 200px;
+    max-width: 400px;
+}
+
+/* ── Tables ──────────────────────────────────────────────────────────────── */
+
+.bs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+
+.bs-table th,
+.bs-table td {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+}
+
+.bs-table th {
+    font-weight: 600;
+    color: var(--color-text-maxcontrast);
+    background: var(--color-background-dark);
+    white-space: nowrap;
+}
+
+.bs-table tbody tr:hover {
+    background: var(--color-background-hover);
+}
+
+/* Grade colouring (German: 1=best, 6=worst) */
+.bs-grade-1, .bs-grade-1\+ { color: #2ea44f; font-weight: 600; }
+.bs-grade-2, .bs-grade-2\+ { color: #6ac174; }
+.bs-grade-3               { color: #e3a008; }
+.bs-grade-4               { color: #d97706; }
+.bs-grade-5, .bs-grade-6  { color: #e02424; }
+
+/* ── Final grades ────────────────────────────────────────────────────────── */
+
+.bs-semester-block {
+    margin-bottom: 24px;
+}
+
+.bs-semester-block h3 {
+    margin-bottom: 8px;
+    font-size: 1em;
+    color: var(--color-text-maxcontrast);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ── Status badges ───────────────────────────────────────────────────────── */
+
+.bs-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.8em;
+    font-weight: 600;
+}
+
+.bs-badge-ok    { background: #d1fae5; color: #065f46; }
+.bs-badge-error { background: #fee2e2; color: #991b1b; }
+.bs-badge-none  { background: var(--color-background-dark); color: var(--color-text-maxcontrast); }
+
+/* ── Errors ──────────────────────────────────────────────────────────────── */
+
+.bs-error {
+    color: var(--color-error);
+    background: var(--color-error-bg, #fff0f0);
+    border: 1px solid var(--color-error);
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-top: 8px;
+}
+
+/* ── Account list (personal settings) ───────────────────────────────────── */
+
+.bs-account-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.bs-account-item:last-child {
+    border-bottom: none;
+}
+
+.bs-account-info {
+    flex: 1;
+}
+
+.bs-account-name {
+    font-weight: 600;
+}
+
+.bs-account-meta {
+    font-size: 0.85em;
+    color: var(--color-text-maxcontrast);
+}
