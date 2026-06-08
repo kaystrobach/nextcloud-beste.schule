@@ -181,7 +181,7 @@
                 btn.disabled = true;
                 btn.textContent = t('beste_schule', 'Syncing…');
                 try {
-                    await apiFetch('POST', ` / admin / accounts / ${id} / sync`);
+                    await apiFetch('POST', `/admin/accounts/${id}/sync`);
                     await loadAccounts();
                 } catch (e) {
                     alert(t('beste_schule', 'Sync failed: ') + e.message);
@@ -195,7 +195,7 @@
                     return;
                 }
                 try {
-                    await apiFetch('DELETE', ` / admin / accounts / ${id}`);
+                    await apiFetch('DELETE', `/admin/accounts/${id}`);
                     await loadAccounts();
                 } catch (e) {
                     alert(t('beste_schule', 'Delete failed: ') + e.message);

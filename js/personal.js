@@ -143,7 +143,7 @@
                 btn.disabled    = true;
                 btn.textContent = t('beste_schule', 'Syncing…');
                 try {
-                    await apiFetch('POST', ` / accounts / ${id} / sync`);
+                    await apiFetch('POST', `/accounts/${id}/sync`);
                     await loadMyAccounts();
                 } catch (e) {
                     alert(e.message);
@@ -156,7 +156,7 @@
                     return;
                 }
                 try {
-                    await apiFetch('DELETE', ` / accounts / ${id}`);
+                    await apiFetch('DELETE', `/accounts/${id}`);
                     await loadMyAccounts();
                 } catch (e) {
                     alert(e.message);

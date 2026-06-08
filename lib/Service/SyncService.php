@@ -53,6 +53,32 @@ class SyncService {
         }
     }
 
+    private function clearCalendarRange(ICalendar $calendar): void {
+        $start = (new \DateTime())->sub(new \DateInterval('P' . self::LOOKBACK_DAYS . 'D'));
+        $end   = (new \DateTime())->add(new \DateInterval('P' . (self::LOOKAHEAD_WEEKS * 7) . 'D'));
+
+        $existing = $calendar->search('', [], [
+            'timerange' => ['start' => $start, 'end' => $end],
+        ]);
+
+        foreach ($existing as $obj) {
+            foreach ($obj['objects'] as $vevent) {
+                $uid = $vevent['UID'][0] ?? null;
+                if ($uid && str_starts_with($uid, 'besteschule-')) {
+                    try {
+                        // @phpstan-ignore-next-line
+                        $calendar->deleteObject($uid);
+                    } catch (\Exception $e) {
+                        $this->logger->error('beste.schule: failed to delete event {uid}: {err}', [
+                            'uid' => $uid,
+                            'err' => $e->getMessage(),
+                        ]);
+                    }
+                }
+            }
+        }
+    }
+
     // ── Grades ────────────────────────────────────────────────────────────────
 
     private function syncGrades(Account $account, string $token, int $studentId): void {
@@ -116,6 +142,8 @@ class SyncService {
             ]);
             return;
         }
+
+        $this->clearCalendarRange($calendar);
 
         foreach ($days as $day) {
             $date = $day['date'] ?? null;
