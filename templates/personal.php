@@ -44,6 +44,11 @@ declare(strict_types=1);
                        value="24" min="1" max="168" />
             </div>
             <div class="bs-form-row">
+                <label for="bs-p-address"><?php p($l->t('School Address (optional)')); ?></label>
+                <input type="text" id="bs-p-address" name="address"
+                       placeholder="<?php p($l->t('e.g. Musterstraße 1, 01234 Musterstadt')); ?>" />
+            </div>
+            <div class="bs-form-row">
                 <button type="submit" class="button primary"><?php p($l->t('Save')); ?></button>
             </div>
             <div id="bs-p-error" class="bs-error" style="display:none"></div>

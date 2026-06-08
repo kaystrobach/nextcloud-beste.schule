@@ -270,6 +270,11 @@
                                         "format": "int64",
                                         "default": 24,
                                         "description": "The sync interval in hours"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "default": "",
+                                        "description": "The school address"
                                     }
                                 }
                             }
@@ -319,6 +324,7 @@
                                                         "intervalId",
                                                         "calendarUri",
                                                         "syncInterval",
+                                                        "address",
                                                         "lastSyncAt",
                                                         "lastSyncError"
                                                     ],
@@ -348,6 +354,10 @@
                                                         "syncInterval": {
                                                             "type": "integer",
                                                             "format": "int64"
+                                                        },
+                                                        "address": {
+                                                            "type": "string",
+                                                            "nullable": true
                                                         },
                                                         "lastSyncAt": {
                                                             "type": "string",

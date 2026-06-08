@@ -22,6 +22,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void    setCalendarUri(?string $uri)
  * @method int     getSyncInterval()
  * @method void    setSyncInterval(int $hours)
+ * @method string|null getAddress()
+ * @method void    setAddress(?string $address)
  * @method string|null getLastSyncAt()
  * @method void    setLastSyncAt(?string $ts)
  * @method string|null getLastSyncError()
@@ -35,6 +37,7 @@ class Account extends Entity {
     protected int    $intervalId  = 0;
     protected ?string $calendarUri  = null;
     protected int    $syncInterval = 24;  // hours between background syncs
+    protected ?string $address      = null;
     protected ?string $lastSyncAt   = null;
     protected ?string $lastSyncError = null;
 

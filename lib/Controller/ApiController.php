@@ -70,17 +70,27 @@ class ApiController extends OCSController
      * @param int $intervalId The school year interval ID
      * @param string $calendarUri The Nextcloud calendar URI
      * @param int $syncInterval The sync interval in hours
-     * @return DataResponse<Http::STATUS_CREATED, array{id: int, userId: string, studentId: int, studentName: string, intervalId: int, calendarUri: ?string, syncInterval: int, lastSyncAt: ?string, lastSyncError: ?string}, array{}>|DataResponse<Http::STATUS_UNAUTHORIZED, array{error: string, message: string}, array{}>|DataResponse<Http::STATUS_BAD_GATEWAY, array{error: string}, array{}>
+     * @param string $address The school address
+     * @return DataResponse<Http::STATUS_CREATED, array{id: int, userId: string, studentId: int, studentName: string, intervalId: int, calendarUri: ?string, syncInterval: int, address: ?string, lastSyncAt: ?string, lastSyncError: ?string}, array{}>|DataResponse<Http::STATUS_UNAUTHORIZED, array{error: string, message: string}, array{}>|DataResponse<Http::STATUS_BAD_GATEWAY, array{error: string}, array{}>
      */
     #[NoAdminRequired]
     #[NoCSRFRequired]
     public function createAccount(
-        string $token,
+        string $token = '',
         int $studentId = 0,
         int $intervalId = 0,
         string $calendarUri = '',
         int $syncInterval = 24,
+        string $address = '',
     ): DataResponse {
+        // Fallback for JSON body or OCS params
+        $token = $token ?: $this->request->getParam('token', '');
+        $studentId = $studentId ?: (int)$this->request->getParam('studentId', 0);
+        $intervalId = $intervalId ?: (int)$this->request->getParam('intervalId', 0);
+        $calendarUri = $calendarUri ?: $this->request->getParam('calendarUri', '');
+        $syncInterval = ($syncInterval !== 24) ? $syncInterval : (int)$this->request->getParam('syncInterval', 24);
+        $address = $address ?: $this->request->getParam('address', '');
+
         try {
             $account = $this->accountService->createAccount(
                 $this->currentUserId(),
@@ -89,6 +99,7 @@ class ApiController extends OCSController
                 $intervalId,
                 $calendarUri,
                 $syncInterval,
+                $address,
             );
             return new DataResponse($this->serializeAccount($account), Http::STATUS_CREATED);
         } catch (AuthException $e) {
@@ -112,6 +123,9 @@ class ApiController extends OCSController
     #[NoCSRFRequired]
     public function updateAccount(int $id, array $data = []): DataResponse
     {
+        if (empty($data)) {
+            $data = $this->request->getParams();
+        }
         try {
             $account = $this->accountService->updateAccount($this->currentUserId(), $id, $data);
             return new DataResponse($this->serializeAccount($account));
@@ -309,18 +323,27 @@ class ApiController extends OCSController
      * @param int $intervalId The school year interval ID
      * @param string $calendarUri The Nextcloud calendar URI
      * @param int $syncInterval The sync interval in hours
-     * @return DataResponse<Http::STATUS_CREATED, array{id: int, userId: string, studentId: int, studentName: string, intervalId: int, calendarUri: ?string, syncInterval: int, lastSyncAt: ?string, lastSyncError: ?string}, array{}>|DataResponse<Http::STATUS_UNAUTHORIZED, array{error: string, message: string}, array{}>|DataResponse<Http::STATUS_BAD_GATEWAY, array{error: string}, array{}>
+     * @param string $address The school address
+     * @return DataResponse<Http::STATUS_CREATED, array{id: int, userId: string, studentId: int, studentName: string, intervalId: int, calendarUri: ?string, syncInterval: int, address: ?string, lastSyncAt: ?string, lastSyncError: ?string}, array{}>|DataResponse<Http::STATUS_UNAUTHORIZED, array{error: string, message: string}, array{}>|DataResponse<Http::STATUS_BAD_GATEWAY, array{error: string}, array{}>
      */
     #[NoCSRFRequired]
     public function adminCreateAccount(
         string $userId,
-        string $token,
+        string $token = '',
         int $studentId = 0,
         int $intervalId = 0,
         string $calendarUri = '',
         int $syncInterval = 24,
+        string $address = '',
     ): DataResponse {
         $this->requireAdmin();
+        $token = $token ?: $this->request->getParam('token', '');
+        $studentId = $studentId ?: (int)$this->request->getParam('studentId', 0);
+        $intervalId = $intervalId ?: (int)$this->request->getParam('intervalId', 0);
+        $calendarUri = $calendarUri ?: $this->request->getParam('calendarUri', '');
+        $syncInterval = ($syncInterval !== 24) ? $syncInterval : (int)$this->request->getParam('syncInterval', 24);
+        $address = $address ?: $this->request->getParam('address', '');
+
         try {
             $account = $this->accountService->createAccount(
                 $userId,
@@ -329,6 +352,7 @@ class ApiController extends OCSController
                 $intervalId,
                 $calendarUri,
                 $syncInterval,
+                $address,
             );
             return new DataResponse($this->serializeAccount($account), Http::STATUS_CREATED);
         } catch (AuthException $e) {
@@ -455,6 +479,7 @@ class ApiController extends OCSController
             'intervalId'    => $a->getIntervalId(),
             'calendarUri'   => $a->getCalendarUri(),
             'syncInterval'  => $a->getSyncInterval(),
+            'address'       => $a->getAddress(),
             'lastSyncAt'    => $a->getLastSyncAt(),
             'lastSyncError' => $a->getLastSyncError(),
         ];

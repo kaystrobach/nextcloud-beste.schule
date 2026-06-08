@@ -55,6 +55,7 @@ class AccountService
         int $intervalId = 0,
         string $calendarUri = '',
         int $syncInterval = 24,
+        string $address = '',
     ): Account {
         // Validate token and discover student
         $students = $this->apiService->students($token);
@@ -82,6 +83,7 @@ class AccountService
         $account->setIntervalId($intervalId);
         $account->setCalendarUri($calendarUri ?: null);
         $account->setSyncInterval(max(1, $syncInterval));
+        $account->setAddress($address ?: null);
 
         return $this->accountMapper->insert($account);
     }
@@ -106,6 +108,9 @@ class AccountService
         }
         if (isset($fields['sync_interval'])) {
             $account->setSyncInterval(max(1, (int) $fields['sync_interval']));
+        }
+        if (isset($fields['address'])) {
+            $account->setAddress($fields['address'] ?: null);
         }
 
         return $this->accountMapper->update($account);

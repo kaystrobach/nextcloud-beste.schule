@@ -124,7 +124,7 @@ class SyncService {
         $days = $this->api->journalDays($token, $studentId, self::LOOKBACK_DAYS, self::LOOKAHEAD_WEEKS);
 
         $calendarUri = $account->getCalendarUri();
-        $calendar    = $this->findCalendar($account->getUserId(), $calendarUri);
+        $calendar    = $this->findCalendar($account->getUserId(), $calendarUri ?? '');
 
         if ($calendar === null) {
             $this->logger->warning('beste.schule: calendar {uri} not found for user {uid}', [
@@ -144,7 +144,7 @@ class SyncService {
 
             // One event per lesson
             foreach ($day['lessons'] ?? [] as $lesson) {
-                $uid = $this->upsertLessonEvent($calendar, $date, $lesson, $account->getStudentName());
+                $uid = $this->upsertLessonEvent($calendar, $date, $lesson, $account->getStudentName(), $account->getAddress());
                 if ($uid) {
                     $processedUids[] = $uid;
                 }
@@ -152,7 +152,7 @@ class SyncService {
 
             // All-day events for day notes
             foreach ($day['notes'] ?? [] as $note) {
-                $uid = $this->upsertNoteEvent($calendar, $date, $note, $account->getStudentName());
+                $uid = $this->upsertNoteEvent($calendar, $date, $note, $account->getStudentName(), $account->getAddress());
                 if ($uid) {
                     $processedUids[] = $uid;
                 }
@@ -223,7 +223,7 @@ class SyncService {
         }
     }
 
-    private function upsertLessonEvent(ICalendar $calendar, string $date, array $lesson, string $studentName): string {
+    private function upsertLessonEvent(ICalendar $calendar, string $date, array $lesson, string $studentName, ?string $address): string {
         $subject    = $lesson['subject']['name'] ?? 'Stunde';
         $status     = $lesson['status'] ?? 'hold';
         $statusIcon = $this->statusIcon($status);
@@ -240,6 +240,19 @@ class SyncService {
             'SUMMARY' => $summary,
             'DTSTAMP' => new \DateTime('now', new \DateTimeZone('UTC')),
         ]);
+
+        $rooms = $lesson['rooms'] ?? [];
+        $roomNames = array_map(fn($r) => $r['local_id'] ?? $r['name'] ?? '', $rooms);
+        $roomNames = array_filter($roomNames);
+        $roomStr = implode(', ', $roomNames);
+
+        if ($address || $roomStr) {
+            $location = $address ?? '';
+            if ($roomStr) {
+                $location = $location ? "{$location}, Raum: {$roomStr}" : "Raum: {$roomStr}";
+            }
+            $vevent->add('LOCATION', $location);
+        }
 
         if ($timeFrom && $timeTo) {
             $dtStart = new \DateTime("{$date}T{$timeFrom}:00", new \DateTimeZone('Europe/Berlin'));
@@ -290,7 +303,7 @@ class SyncService {
         return $uid;
     }
 
-    private function upsertNoteEvent(ICalendar $calendar, string $date, array $note, string $studentName): string {
+    private function upsertNoteEvent(ICalendar $calendar, string $date, array $note, string $studentName, ?string $address): string {
         $typeName = $note['type']['name'] ?? 'Notiz';
         $text     = $note['description'] ?? '';
         $summary  = "📌 {$typeName}" . ($text ? ": {$text}" : '');
@@ -303,6 +316,10 @@ class SyncService {
             'SUMMARY' => $summary,
             'DTSTAMP' => new \DateTime('now', new \DateTimeZone('UTC')),
         ]);
+
+        if ($address) {
+            $vevent->add('LOCATION', $address);
+        }
         $dtStart = new \DateTimeImmutable($date);
         $dtEnd = $dtStart->modify('+1 day');
         $vevent->add('DTSTART', $dtStart);

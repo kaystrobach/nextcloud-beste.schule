@@ -37,6 +37,7 @@
             const accounts = await apiFetch('GET', '/accounts');
             (accounts || []).forEach(a => {
                 const item = document.createElement('div');
+                item.id = `bs-account-${a.id}`;
                 item.className = 'bs-account-item';
                 const lastSync = a.lastSyncAt
                 ? new Date(a.lastSyncAt).toLocaleString()
@@ -48,9 +49,15 @@
                         ${t('beste_schule', 'Last sync')}: ${escHtml(lastSync)}
                         ${a.lastSyncError ? `<span style="color:var(--color-error)">⚠ ${escHtml(a.lastSyncError)}</span>` : ''}
                     </div>
+                    <div class="bs-account-settings" style="font-size: 0.85em; margin-top: 5px;">
+                        <div><strong>${t('beste_schule', 'Calendar')}:</strong> ${escHtml(a.calendarUri || t('beste_schule', 'None'))}</div>
+                        <div><strong>${t('beste_schule', 'Sync Interval')}:</strong> ${a.syncInterval}h</div>
+                        <div><strong>${t('beste_schule', 'Address')}:</strong> ${escHtml(a.address || '-')}</div>
+                    </div>
                     <div class="bs-account-logs" id="bs-logs-${a.id}" style="font-size: 0.8em; margin-top: 5px; color: var(--color-text-maxcontrast); display: none;">
                     </div>
                 </div>
+                <button class="button bs-p-edit-btn" data-id="${a.id}">${t('beste_schule', 'Edit')}</button>
                 <button class="button bs-p-logs-btn" data-id="${a.id}">${t('beste_schule', 'Logs')}</button>
                 <button class="button bs-p-sync-btn" data-id="${a.id}">${t('beste_schule', 'Sync')}</button>
                 <button class="button bs-p-delete-btn" data-id="${a.id}">${t('beste_schule', 'Remove')}</button>`;
@@ -67,6 +74,8 @@
         }
     }
 
+    let allCalendars = [];
+
     async function loadCalendars()
     {
         const sel = document.getElementById('bs-p-calendarUri');
@@ -74,8 +83,8 @@
             return;
         }
         try {
-            const calendars = await apiFetch('GET', '/calendars');
-            (calendars || []).forEach(cal => {
+            allCalendars = await apiFetch('GET', '/calendars');
+            allCalendars.forEach(cal => {
                 const opt = document.createElement('option');
                 opt.value = cal.uri;
                 opt.textContent = cal.displayname;
@@ -122,6 +131,7 @@
                     studentId: parseInt((form.studentId && form.studentId.value) || '0', 10),
                     calendarUri:  form.calendarUri.value.trim(),
                     syncInterval: parseInt(form.syncInterval.value, 10),
+                    address:      form.address.value.trim(),
                 });
                 form.reset();
                 document.getElementById('bs-p-student-row').style.display = 'none';
@@ -141,6 +151,54 @@
                 return;
             }
             const id = btn.dataset.id;
+
+            if (btn.classList.contains('bs-p-edit-btn')) {
+                const item = document.getElementById(`bs-account-${id}`);
+                const account = await apiFetch('GET', `/accounts`); // Find the one
+                const a = (account || []).find(acc => acc.id == id);
+                if (!a) return;
+
+                item.innerHTML = `
+                <form class="bs-edit-form" style="width:100%">
+                    <h4>${t('beste_schule', 'Edit Settings')}</h4>
+                    <div class="bs-form-row">
+                        <label>${t('beste_schule', 'Calendar')}</label>
+                        <select name="calendarUri">
+                            <option value="" ${!a.calendarUri ? 'selected' : ''}>${t('beste_schule', 'Disabled')}</option>
+                            ${allCalendars.map(c => `<option value="${c.uri}" ${c.uri === a.calendarUri ? 'selected' : ''}>${escHtml(c.displayname)}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="bs-form-row">
+                        <label>${t('beste_schule', 'Sync Interval')}</label>
+                        <input type="number" name="syncInterval" value="${a.syncInterval}" min="1" max="168" />
+                    </div>
+                    <div class="bs-form-row">
+                        <label>${t('beste_schule', 'Address')}</label>
+                        <input type="text" name="address" value="${escHtml(a.address || '')}" />
+                    </div>
+                    <div class="bs-form-row">
+                        <button type="submit" class="button primary">${t('beste_schule', 'Save')}</button>
+                        <button type="button" class="button bs-p-cancel-btn">${t('beste_schule', 'Cancel')}</button>
+                    </div>
+                </form>`;
+
+                const editForm = item.querySelector('form');
+                editForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    try {
+                        await apiFetch('PUT', `/accounts/${id}`, {
+                            calendar_uri: editForm.calendarUri.value,
+                            sync_interval: parseInt(editForm.syncInterval.value, 10),
+                            address: editForm.address.value.trim(),
+                        });
+                        await loadMyAccounts();
+                    } catch (err) {
+                        alert(err.message);
+                    }
+                });
+                item.querySelector('.bs-p-cancel-btn').addEventListener('click', () => loadMyAccounts());
+                return;
+            }
 
             if (btn.classList.contains('bs-p-sync-btn')) {
                 btn.disabled    = true;
