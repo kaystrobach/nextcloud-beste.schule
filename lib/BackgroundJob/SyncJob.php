@@ -44,9 +44,10 @@ class SyncJob extends TimedJob {
             }
 
             try {
-                $this->logger->info('beste.schule: background sync for account {id} (user {uid})', [
-                    'id'  => $account->getId(),
-                    'uid' => $account->getUserId(),
+                $this->logger->info('beste.schule: background sync for account {id} (user {uid}, student {student})', [
+                    'id'      => $account->getId(),
+                    'uid'     => $account->getUserId(),
+                    'student' => $account->getStudentName(),
                 ]);
                 $this->syncService->sync($account);
                 $this->accountService->markSyncSuccess($account);

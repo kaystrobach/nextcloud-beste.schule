@@ -28,6 +28,7 @@
     </background-jobs>
     <commands>
         <command>OCA\BesteSchule\Command\JournalCommand</command>
+        <command>OCA\BesteSchule\Command\SyncCommand</command>
     </commands>
     <settings>
         <admin>OCA\BesteSchule\Settings\AdminSettings</admin>
