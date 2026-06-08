@@ -227,7 +227,9 @@ class SyncService {
         $subject    = $lesson['subject']['name'] ?? 'Stunde';
         $status     = $lesson['status'] ?? 'hold';
         $statusIcon = $this->statusIcon($status);
-        $summary    = "{$statusIcon} {$subject}";
+        $notes = $lesson['notes'] ?? [];
+        $hasNotes = !empty($notes);
+        $summary    = ($hasNotes ? "‼️ " : "") . "{$statusIcon} {$subject}";
 
         $timeFrom = $lesson['time']['from'] ?? null;
         $timeTo   = $lesson['time']['to']   ?? null;
@@ -374,9 +376,9 @@ class SyncService {
             $parts[] = 'Raum: ' . implode(', ', array_filter($rooms));
         }
 
-        $notes = array_map(fn($n) => $n['note'] ?? '', $lesson['notes'] ?? []);
-        foreach (array_filter($notes) as $n) {
-            $parts[] = $n;
+        $lessonNotes = array_map(fn($n) => $n['description'] ?? $n['note'] ?? '', $lesson['notes'] ?? []);
+        foreach (array_filter($lessonNotes) as $n) {
+            $parts[] = "Notiz: " . $n;
         }
 
         return implode("\n", $parts);
