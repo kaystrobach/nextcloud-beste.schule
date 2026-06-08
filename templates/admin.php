@@ -7,16 +7,6 @@ declare(strict_types=1);
 \OCP\Util::addStyle('beste_schule', 'style');
 ?>
 
-<script>
-    if (typeof OCS === 'undefined') {
-        window.OCS = {
-            linkTo: function(path) {
-                return OC.linkToOCS('beste_schule/api/v1', 2) + path;
-            }
-        };
-    }
-</script>
-
 <div id="beste-schule-admin" class="section">
     <h2><?php p($l->t('beste.schule – Account Management')); ?></h2>
     <p class="settings-hint">
