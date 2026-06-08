@@ -77,11 +77,12 @@ class BesteSchuleService
      */
     public function journalWeek(string $token, int $studentId, string $isoWeek): array
     {
-        return $this->get($token, "journal/weeks/{$isoWeek}", [
+        $data = $this->get($token, "journal/weeks/{$isoWeek}", [
             'filter'      => ['student' => $studentId],
             'include'     => 'days.lessons',
             'interpolate' => 'true',
         ]);
+        return $data['data'] ?? $data;
     }
 
     /**
