@@ -102,11 +102,18 @@
             <td>${escHtml(lastSync)}</td>
             <td>${statusBadge}</td>
             <td>
+                <button class="button bs-logs-btn" data-id="${account.id}">${t('beste_schule', 'Logs')}</button>
                 <button class="button bs-sync-btn" data-id="${account.id}">${t('beste_schule', 'Sync')}</button>
                 <button class="button bs-delete-btn" data-id="${account.id}">${t('beste_schule', 'Delete')}</button>
             </td>`;
 
+        const logTr = document.createElement('tr');
+        logTr.id = `bs-logs-row-${account.id}`;
+        logTr.style.display = 'none';
+        logTr.innerHTML = `<td colspan="7"><div id="bs-logs-${account.id}" style="font-size: 0.85em; color: var(--color-text-maxcontrast); max-height: 200px; overflow-y: auto; padding: 10px; background: var(--color-background-darker);"></div></td>`;
+
         tbody.appendChild(tr);
+        tbody.appendChild(logTr);
     }
 
     // ── Validate token → populate student dropdown ────────────────────────────
@@ -187,6 +194,22 @@
                     alert(t('beste_schule', 'Sync failed: ') + e.message);
                     btn.disabled = false;
                     btn.textContent = t('beste_schule', 'Sync');
+                }
+            }
+
+            if (btn.classList.contains('bs-logs-btn')) {
+                const row = document.getElementById(`bs-logs-row-${id}`);
+                const div = document.getElementById(`bs-logs-${id}`);
+                if (row.style.display === 'none') {
+                    try {
+                        const logs = await apiFetch('GET', `/accounts/${id}/logs`);
+                        div.innerHTML = logs.map(l => `[${l.createdAt}] ${l.level.toUpperCase()}: ${escHtml(l.message)}`).join('<br>');
+                        row.style.display = '';
+                    } catch (e) {
+                        alert(e.message);
+                    }
+                } else {
+                    row.style.display = 'none';
                 }
             }
 

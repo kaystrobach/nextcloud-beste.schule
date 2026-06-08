@@ -33,5 +33,8 @@ return [
 
         // Calendars
         ['name' => 'api#getCalendars',   'url' => '/api/v1/calendars',               'verb' => 'GET'],
+
+        // Sync Logs
+        ['name' => 'api#getLogs',        'url' => '/api/v1/accounts/{id}/logs',      'verb' => 'GET'],
     ],
 ];

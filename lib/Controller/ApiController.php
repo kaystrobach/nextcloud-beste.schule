@@ -11,6 +11,7 @@ use OCA\BesteSchule\Exception\AuthException;
 use OCA\BesteSchule\Exception\BesteSchuleException;
 use OCA\BesteSchule\Service\AccountService;
 use OCA\BesteSchule\Service\SyncService;
+use OCA\BesteSchule\Db\SyncLogMapper;
 use OCP\AppFramework\Http;
 use OCP\Calendar\IManager as ICalendarManager;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -35,6 +36,7 @@ class ApiController extends OCSController
         private readonly SyncService $syncService,
         private readonly GradeMapper $gradeMapper,
         private readonly FinalGradeMapper $finalGradeMapper,
+        private readonly SyncLogMapper $syncLogMapper,
         private readonly ICalendarManager $calendarManager,
     ) {
         parent::__construct(Application::APP_ID, $request);
@@ -392,6 +394,39 @@ class ApiController extends OCSController
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
+
+    /**
+     * Get sync logs for an account
+     *
+     * 200: Logs retrieved successfully
+     *
+     * @param int $id The account ID
+     * @return DataResponse<Http::STATUS_OK, list<array{id: int, accountId: int, createdAt: string, level: string, message: string}>, array{}>
+     */
+    #[NoAdminRequired]
+    #[NoCSRFRequired]
+    public function getLogs(int $id): DataResponse
+    {
+        $userId = $this->currentUserId();
+        $account = $this->accountService->getAccount($id);
+
+        if (!$account || ($account->getUserId() !== $userId && !$this->isAdmin())) {
+            return new DataResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        $logs = $this->syncLogMapper->findByAccount($id);
+        $result = array_map(function ($log) {
+            return [
+                'id' => $log->getId(),
+                'accountId' => $log->getAccountId(),
+                'createdAt' => $log->getCreatedAt(),
+                'level' => $log->getLevel(),
+                'message' => $log->getMessage(),
+            ];
+        }, $logs);
+
+        return new DataResponse($result);
+    }
 
     private function currentUserId(): string
     {

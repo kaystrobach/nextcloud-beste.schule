@@ -9,6 +9,8 @@ use OCA\BesteSchule\Db\FinalGrade;
 use OCA\BesteSchule\Db\FinalGradeMapper;
 use OCA\BesteSchule\Db\Grade;
 use OCA\BesteSchule\Db\GradeMapper;
+use OCA\BesteSchule\Db\SyncLog;
+use OCA\BesteSchule\Db\SyncLogMapper;
 use OCP\Calendar\ICalendar;
 use OCP\Calendar\IManager as ICalendarManager;
 use Psr\Log\LoggerInterface;
@@ -29,6 +31,7 @@ class SyncService {
         private readonly AccountService     $accountService,
         private readonly GradeMapper        $gradeMapper,
         private readonly FinalGradeMapper   $finalGradeMapper,
+        private readonly SyncLogMapper      $syncLogMapper,
         private readonly ICalendarManager   $calendarManager,
         private readonly LoggerInterface    $logger,
     ) {}
@@ -40,17 +43,30 @@ class SyncService {
         $token     = $this->accountService->decryptToken($account);
         $studentId = $account->getStudentId();
 
-        $this->logger->info('beste.schule: syncing account {id} (student {sid})', [
-            'id'  => $account->getId(),
-            'sid' => $studentId,
-        ]);
+        $this->addLog($account, 'info', 'Starting synchronization');
 
-        $this->syncGrades($account, $token, $studentId);
-        $this->syncFinalGrades($account, $token, $studentId);
+        try {
+            $this->syncGrades($account, $token, $studentId);
+            $this->syncFinalGrades($account, $token, $studentId);
 
-        if ($account->getCalendarUri()) {
-            $this->syncCalendar($account, $token, $studentId);
+            if ($account->getCalendarUri()) {
+                $this->syncCalendar($account, $token, $studentId);
+            }
+
+            $this->addLog($account, 'info', 'Synchronization completed successfully');
+        } catch (\Exception $e) {
+            $this->addLog($account, 'error', 'Synchronization failed: ' . $e->getMessage());
+            throw $e;
         }
+    }
+
+    private function addLog(Account $account, string $level, string $message): void {
+        $log = new SyncLog();
+        $log->setAccountId($account->getId());
+        $log->setLevel($level);
+        $log->setMessage($message);
+        $log->setCreatedAt((new \DateTime())->format('Y-m-d H:i:s'));
+        $this->syncLogMapper->insert($log);
     }
 
     private function clearCalendarRange(ICalendar $calendar): void {
@@ -226,7 +242,7 @@ class SyncService {
     private function findCalendar(string $userId, string $uri): ?ICalendar {
         $calendars = $this->calendarManager->getCalendarsForPrincipal("principals/users/{$userId}");
         foreach ($calendars as $cal) {
-            if ($cal->getUri() === $uri || $cal->getKey() === $uri) {
+            if ($cal->getUri() === $uri || $cal->getKey() === $uri || $cal->getDisplayName() === $uri) {
                 return $cal;
             }
         }

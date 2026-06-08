@@ -48,7 +48,10 @@
                         ${t('beste_schule', 'Last sync')}: ${escHtml(lastSync)}
                         ${a.lastSyncError ? `<span style="color:var(--color-error)">⚠ ${escHtml(a.lastSyncError)}</span>` : ''}
                     </div>
+                    <div class="bs-account-logs" id="bs-logs-${a.id}" style="font-size: 0.8em; margin-top: 5px; color: var(--color-text-maxcontrast); display: none;">
+                    </div>
                 </div>
+                <button class="button bs-p-logs-btn" data-id="${a.id}">${t('beste_schule', 'Logs')}</button>
                 <button class="button bs-p-sync-btn" data-id="${a.id}">${t('beste_schule', 'Sync')}</button>
                 <button class="button bs-p-delete-btn" data-id="${a.id}">${t('beste_schule', 'Remove')}</button>`;
                 container.appendChild(item);
@@ -149,6 +152,20 @@
                     alert(e.message);
                     btn.disabled    = false;
                     btn.textContent = t('beste_schule', 'Sync');
+                }
+            }
+            if (btn.classList.contains('bs-p-logs-btn')) {
+                const logDiv = document.getElementById(`bs-logs-${id}`);
+                if (logDiv.style.display === 'none') {
+                    try {
+                        const logs = await apiFetch('GET', `/accounts/${id}/logs`);
+                        logDiv.innerHTML = logs.map(l => `[${l.createdAt}] ${l.level.toUpperCase()}: ${escHtml(l.message)}`).join('<br>');
+                        logDiv.style.display = 'block';
+                    } catch (e) {
+                        alert(e.message);
+                    }
+                } else {
+                    logDiv.style.display = 'none';
                 }
             }
             if (btn.classList.contains('bs-p-delete-btn')) {
